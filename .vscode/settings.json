@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "*.cmp": "xml",
+        "*.app": "xml",
+        "*.vue": "html",
+        "iostream": "cpp",
+        "__mutex_base": "cpp",
+        "memory": "cpp",
+        "random": "cpp",
+        "type_traits": "cpp",
+        "algorithm": "cpp",
+        "__locale": "cpp"
+    },
+    "C_Cpp.intelliSenseEngine": "Default",
+    "editor.minimap.enabled": false
+}

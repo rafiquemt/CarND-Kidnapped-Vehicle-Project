@@ -20,11 +20,25 @@
 using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
-	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of 
-	//   x, y, theta and their uncertainties from GPS) and all weights to 1. 
-	// Add random Gaussian noise to each particle.
-	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
-
+	num_particles = 3;
+	particles.resize(num_particles);
+	weights.resize(num_particles);
+	double w = 1;
+	
+	normal_distribution<double> dist_x(x, std[0]);
+	normal_distribution<double> dist_y(y, std[1]);
+	normal_distribution<double> dist_theta(theta, std[2]);
+	for (int i = 0; i < particles.size(); i++) {
+		Particle p;
+		p.id = i;
+		p.x = dist_x(gen);
+		p.y = dist_y(gen);
+		p.theta = dist_theta(gen);
+		p.weight = w;
+		particles[i] = p;
+		weights[i] = 1;
+	}
+	is_initialized = true;
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
@@ -33,6 +47,29 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 
+	for (int i = 0; i < particles.size(); i++) {
+		Particle& p = particles[i];
+		double x, y, theta;
+		
+		if (abs(yaw_rate) < 0.001) {
+			x = p.x + velocity * delta_t * cos(p.theta);
+			y = p.y + velocity * delta_t * sin(p.theta);
+			theta = p.theta;
+		} else {
+			x = p.x + (velocity / yaw_rate) * (sin(p.theta + yaw_rate * delta_t) - sin(p.theta));
+			y = p.y + (velocity / yaw_rate) * (cos(p.theta) - cos(p.theta + yaw_rate * delta_t));
+			theta = p.theta + yaw_rate * delta_t;
+		}
+		theta = normalizeToPi(theta);
+
+		normal_distribution<double> dist_x(x, std_pos[0]);
+		normal_distribution<double> dist_y(y, std_pos[1]);
+		normal_distribution<double> dist_theta(theta, std_pos[2]);
+		// add gaussian noise and update particle
+		p.x = dist_x(gen);
+		p.y = dist_y(gen);
+		p.theta = normalizeToPi(dist_theta(gen));
+	}
 }
 
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
@@ -45,6 +82,23 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
 		std::vector<LandmarkObs> observations, Map map_landmarks) {
+
+	for (int i = 0; i < particles.size(); i++) {
+		auto obs_map_list = std::vector<LandmarkObs>(observations.size());
+		Particle& p = particles[i];
+		double x = p.x;
+		double y = p.y;
+		double theta = p.theta;
+		for (int i = 0; i < observations.size(); i++) {
+			LandmarkObs &obs = observations[i];
+			LandmarkObs obs_map;
+			obs_map.id = obs.id;
+			obs_map.x = x + obs.x * cos(theta) - obs.y * sin(theta);
+			obs_map.y = y + obs.x * sin(theta) + obs.y * cos(theta);
+			obs_map_list[i] = obs_map;
+		}
+	}
+
 	// TODO: Update the weights of each particle using a mult-variate Gaussian distribution. You can read
 	//   more about this distribution here: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
 	// NOTE: The observations are given in the VEHICLE'S coordinate system. Your particles are located
