@@ -149,15 +149,13 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 }
 
 void ParticleFilter::resample() {
-	return;
 	discrete_distribution<int> dist(weights.begin(), weights.end());
 	int n = num_particles;
 	vector<Particle> resampled(n);
 	for (int i = 0; i < n; i++) {
 		int index = dist(gen);
-		cout << endl << index << "t" << endl;
-		Particle& p = particles[index];
-		resampled.push_back(p);
+		Particle p = particles[index];
+		resampled[i] = p;
 	}
 	particles = resampled;
 }
