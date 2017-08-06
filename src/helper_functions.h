@@ -10,6 +10,7 @@
 
 #include <sstream>
 #include <fstream>
+#include <iostream>
 #include <math.h>
 #include <vector>
 #include "map.h"
@@ -54,16 +55,24 @@ inline double dist(double x1, double y1, double x2, double y2) {
 }
 
 inline double normalizeToPi(double ang) {
+	return ang;
   double originalAngle = ang;
 
   if (ang > M_PI || ang < -M_PI) {
     ang = atan2(sin(ang), cos(ang));
   }
   if (isnan(ang)) {
-    cout << "Angle Normalization method Failed on nan: " << originalAngle;
+    std::cout << "Angle Normalization method Failed on nan: " << originalAngle;
     exit(1);
   }
   return ang;
+}
+
+inline double gaussian_prob(double x, double y, double mux, double muy, double sigmax, double sigmay) {
+    double dx = (x - mux); 
+	double dy = (y - muy);
+    double ret = 1 / (2 * M_PI * sigmax * sigmay ) * exp( - 1 * (dx * dx / (2*sigmax*sigmax) + dy*dy / (2*sigmay*sigmay))); 
+    return ret;
 }
 
 inline double * getError(double gt_x, double gt_y, double gt_theta, double pf_x, double pf_y, double pf_theta) {
